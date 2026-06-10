@@ -1,0 +1,30 @@
+{
+  "name": "lighthouse-automation-template",
+  "version": "1.0.0",
+  "description": "Automation template with Puppeteer, POM and Lighthouse User Flows",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "clean:reports": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path ./reports) { Remove-Item -Recurse -Force ./reports }\"",
+    "clean:logs": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path ./logs) { Remove-Item -Recurse -Force ./logs }\"",
+    "clean:all": "npm run clean:reports && npm run clean:logs",
+    "test:desktop": "npm run build && cross-env MODO=desktop node dist/index.js",
+    "test:tablet": "npm run build && cross-env MODO=tablet node dist/index.js",
+    "test:mobile": "npm run build && cross-env MODO=mobile node dist/index.js",
+    "test:all": "npm run build && cross-env MODO=all node dist/index.js"
+  },
+  "dependencies": {
+    "lighthouse": "^12.1.0",
+    "puppeteer": "^24.3.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.0",
+    "@types/winston": "^2.4.4",
+    "cross-env": "7.0.3",
+    "ts-node": "10.9.2",
+    "typescript": "5.3.3"
+  }
+}

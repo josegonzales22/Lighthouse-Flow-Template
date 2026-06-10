@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    /* Configuración Básica */
+    "target": "ES2022",                          /* Versión de JS de salida moderna */
+    "module": "NodeNext",                        /* Soporte para ESM nativo (import/export) */
+    "moduleResolution": "NodeNext",              /* Estrategia de resolución de módulos moderna */
+    
+    /* Directorios de Entrada y Salida */
+    "rootDir": "./src",                          /* Tu carpeta fuente con los archivos TS */
+    "outDir": "./dist",                          /* Carpeta donde se generará el código JS compilado */
+    
+    /* Reglas de Calidad y Tipado Estricto */
+    "strict": true,                              /* Habilita comprobaciones estrictas de tipos */
+    "esModuleInterop": true,                     /* Permite importar módulos CommonJS como ESM */
+    "skipLibCheck": true,                        /* Omite la comprobación de tipos de los node_modules */
+    "forceConsistentCasingInFileNames": true     /* Evita problemas de mayúsculas/minúsculas entre OS */
+  },
+  "include": ["src/**/*"]                        /* Indica que compile todo lo que esté dentro de src */
+}
