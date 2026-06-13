@@ -60,6 +60,34 @@
         border-color: #4a90e2;
       }
 
+      .action-btn {
+        flex: 1;
+        border: none;
+        border-radius: 6px;
+        padding: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.2s;
+      }
+
+      .html-btn {
+        background: #4a90e2;
+        color: white;
+      }
+
+      .html-btn:hover {
+        background: #357bd8;
+      }
+
+      .json-btn {
+        background: #5c6bc0;
+        color: white;
+      }
+
+      .json-btn:hover {
+        background: #4558b5;
+      }
+
       .report-name {
         font-weight: bold;
         margin-bottom: 6px;
@@ -112,19 +140,57 @@
         return response.json();
       }
 
-      function createReportCard(title, reportPath, reportUrl) {
+      function createReportCard(deviceName, htmlUrl, jsonUrl) {
         const card = document.createElement("div");
 
         card.className = "report-card";
 
         card.innerHTML = `
-    <div class="report-name">${title}</div>
-    <div class="report-path">${reportPath}</div>
+    <div class="report-name">${deviceName}</div>
+
+    <div style="
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+    ">
+      ${
+        htmlUrl
+          ? `
+            <button class="action-btn html-btn">
+              Open HTML
+            </button>
+          `
+          : ""
+      }
+
+      ${
+        jsonUrl
+          ? `
+            <button class="action-btn json-btn">
+              Open JSON
+            </button>
+          `
+          : ""
+      }
+    </div>
   `;
 
-        card.addEventListener("click", () => {
-          window.open(reportUrl, "_blank");
-        });
+        const htmlButton = card.querySelector(".html-btn");
+        const jsonButton = card.querySelector(".json-btn");
+
+        if (htmlButton) {
+          htmlButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.open(htmlUrl, "_blank");
+          });
+        }
+
+        if (jsonButton) {
+          jsonButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.open(jsonUrl, "_blank");
+          });
+        }
 
         return card;
       }
@@ -135,9 +201,9 @@
         try {
           content.innerHTML = "";
 
-          const rootItems = await getContents();
+          const deviceFolders = await getContents("reports");
 
-          const folders = rootItems.filter((item) => item.type === "dir");
+          const folders = deviceFolders.filter((item) => item.type === "dir");
 
           if (folders.length === 0) {
             content.innerHTML =
@@ -152,29 +218,32 @@
             const title = document.createElement("div");
             title.className = "category-title";
 
-            title.textContent = folder.name
-              .replace(/-/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase());
+            title.textContent =
+              folder.name.charAt(0).toUpperCase() + folder.name.slice(1);
 
             const reportsContainer = document.createElement("div");
             reportsContainer.className = "reports";
 
             const folderItems = await getContents(folder.path);
 
-            const htmlReports = folderItems.filter(
+            const htmlFile = folderItems.find(
               (item) =>
                 item.type === "file" &&
                 item.name.toLowerCase().endsWith(".html"),
             );
 
-            for (const report of htmlReports) {
-              const reportUrl = `${PAGES_BASE}/${report.path}`;
+            const jsonFile = folderItems.find(
+              (item) =>
+                item.type === "file" &&
+                item.name.toLowerCase().endsWith(".json"),
+            );
 
+            if (htmlFile || jsonFile) {
               reportsContainer.appendChild(
                 createReportCard(
-                  report.name.replace(".html", ""),
-                  report.path,
-                  reportUrl,
+                  folder.name.toUpperCase(),
+                  htmlFile ? `${PAGES_BASE}/${htmlFile.path}` : null,
+                  jsonFile ? `${PAGES_BASE}/${jsonFile.path}` : null,
                 ),
               );
             }
@@ -190,6 +259,7 @@
             content.innerHTML = "<div class='error'>No reports found.</div>";
           }
         } catch (error) {
+          console.error(error);
           content.innerHTML = `<div class="error">${error.message}</div>`;
         }
       }
