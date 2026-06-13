@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Test Reports Portal</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 32px;
+        background: #f5f5f5;
+        color: #333;
+      }
+
+      h1 {
+        margin-top: 0;
+        margin-bottom: 8px;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 32px;
+      }
+
+      .category {
+        margin-bottom: 32px;
+      }
+
+      .category-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 12px;
+      }
+
+      .reports {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+      }
+
+      .report-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .report-card:hover {
+        transform: translateY(-2px);
+        background: #eef5ff;
+        border-color: #4a90e2;
+      }
+
+      .report-name {
+        font-weight: bold;
+        margin-bottom: 6px;
+      }
+
+      .report-path {
+        font-size: 12px;
+        color: #777;
+        word-break: break-all;
+      }
+
+      .loading,
+      .error {
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+      }
+
+      .error {
+        color: red;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Test Reports Portal</h1>
+    <div class="subtitle">Browse and open generated test reports.</div>
+
+    <div id="content" class="loading">Loading repository...</div>
+
+    <script>
+      const USER = "josegonzales22";
+      const REPO = "Lighthouse-Flow-Template";
+
+      const API_BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
+
+      const PAGES_BASE = `https://${USER}.github.io/${REPO}`;
+
+      async function getContents(path = "") {
+        const url = path ? `${API_BASE}/${path}` : API_BASE;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(
+            `Unable to load repository content (${response.status})`,
+          );
+        }
+
+        return response.json();
+      }
+
+      function createReportCard(title, reportPath, reportUrl) {
+        const card = document.createElement("div");
+
+        card.className = "report-card";
+
+        card.innerHTML = `
+    <div class="report-name">${title}</div>
+    <div class="report-path">${reportPath}</div>
+  `;
+
+        card.addEventListener("click", () => {
+          window.open(reportUrl, "_blank");
+        });
+
+        return card;
+      }
+
+      async function loadPortal() {
+        const content = document.getElementById("content");
+
+        try {
+          content.innerHTML = "";
+
+          const rootItems = await getContents();
+
+          const folders = rootItems.filter((item) => item.type === "dir");
+
+          if (folders.length === 0) {
+            content.innerHTML = "<div class='error'>No folders found.</div>";
+
+            return;
+          }
+
+          for (const folder of folders) {
+            const section = document.createElement("div");
+            section.className = "category";
+
+            const title = document.createElement("div");
+            title.className = "category-title";
+            title.textContent = folder.name
+              .replace(/-/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase());
+
+            const reportsContainer = document.createElement("div");
+
+            reportsContainer.className = "reports";
+
+            const folderItems = await getContents(folder.path);
+
+            for (const item of folderItems) {
+              /*
+               * Selenium / Postman
+               * Reporte HTML directo
+               */
+              if (
+                item.type === "file" &&
+                item.name.toLowerCase().endsWith(".html")
+              ) {
+                const reportUrl = `${PAGES_BASE}/${item.path}`;
+
+                reportsContainer.appendChild(
+                  createReportCard(
+                    item.name.replace(".html", ""),
+                    item.path,
+                    reportUrl,
+                  ),
+                );
+              }
+
+              /*
+               * JMeter
+               * Carpeta que contiene index.html
+               */
+              if (item.type === "dir") {
+                try {
+                  const subItems = await getContents(item.path);
+
+                  const hasIndex = subItems.some(
+                    (sub) =>
+                      sub.type === "file" &&
+                      sub.name.toLowerCase() === "index.html",
+                  );
+
+                  if (hasIndex) {
+                    const reportUrl = `${PAGES_BASE}/${item.path}/index.html`;
+
+                    reportsContainer.appendChild(
+                      createReportCard(
+                        item.name,
+                        `${item.path}/index.html`,
+                        reportUrl,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  console.error(e);
+                }
+              }
+            }
+
+            if (reportsContainer.children.length > 0) {
+              section.appendChild(title);
+              section.appendChild(reportsContainer);
+
+              content.appendChild(section);
+            }
+          }
+
+          if (content.children.length === 0) {
+            content.innerHTML = "<div class='error'>No reports found.</div>";
+          }
+        } catch (error) {
+          content.innerHTML = `<div class="error">${error.message}</div>`;
+        }
+      }
+
+      loadPortal();
+    </script>
+  </body>
+</html>
