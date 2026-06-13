@@ -140,8 +140,8 @@
           const folders = rootItems.filter((item) => item.type === "dir");
 
           if (folders.length === 0) {
-            content.innerHTML = "<div class='error'>No folders found.</div>";
-
+            content.innerHTML =
+              "<div class='error'>No report folders found.</div>";
             return;
           }
 
@@ -151,71 +151,37 @@
 
             const title = document.createElement("div");
             title.className = "category-title";
+
             title.textContent = folder.name
               .replace(/-/g, " ")
               .replace(/\b\w/g, (c) => c.toUpperCase());
 
             const reportsContainer = document.createElement("div");
-
             reportsContainer.className = "reports";
 
             const folderItems = await getContents(folder.path);
 
-            for (const item of folderItems) {
-              /*
-               * Selenium / Postman
-               * Reporte HTML directo
-               */
-              if (
+            const htmlReports = folderItems.filter(
+              (item) =>
                 item.type === "file" &&
-                item.name.toLowerCase().endsWith(".html")
-              ) {
-                const reportUrl = `${PAGES_BASE}/${item.path}`;
+                item.name.toLowerCase().endsWith(".html"),
+            );
 
-                reportsContainer.appendChild(
-                  createReportCard(
-                    item.name.replace(".html", ""),
-                    item.path,
-                    reportUrl,
-                  ),
-                );
-              }
+            for (const report of htmlReports) {
+              const reportUrl = `${PAGES_BASE}/${report.path}`;
 
-              /*
-               * JMeter
-               * Carpeta que contiene index.html
-               */
-              if (item.type === "dir") {
-                try {
-                  const subItems = await getContents(item.path);
-
-                  const hasIndex = subItems.some(
-                    (sub) =>
-                      sub.type === "file" &&
-                      sub.name.toLowerCase() === "index.html",
-                  );
-
-                  if (hasIndex) {
-                    const reportUrl = `${PAGES_BASE}/${item.path}/index.html`;
-
-                    reportsContainer.appendChild(
-                      createReportCard(
-                        item.name,
-                        `${item.path}/index.html`,
-                        reportUrl,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  console.error(e);
-                }
-              }
+              reportsContainer.appendChild(
+                createReportCard(
+                  report.name.replace(".html", ""),
+                  report.path,
+                  reportUrl,
+                ),
+              );
             }
 
             if (reportsContainer.children.length > 0) {
               section.appendChild(title);
               section.appendChild(reportsContainer);
-
               content.appendChild(section);
             }
           }
